@@ -17,7 +17,7 @@ Built with **FastAPI (backend)** and **HTML/CSS/JS (frontend)**.
 
 ## 📖 Setup Instructions (Simple English)
 
-**1. Project Setup**
+**Project Setup**
 - Put the index.html file inside the frontend folder
 - Put the main.py file inside the backend folder
 - Run the Backend
