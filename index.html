@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Personal Finance Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0; padding: 0;
+        background: #f4f6f8;
+    }
+    header {
+        background: #2e86de;
+        color: white;
+        padding: 15px;
+        text-align: center;
+    }
+    .container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-top: 20px;
+        border-radius: 10px;
+    }
+    h2 {
+        margin-top: 0;
+        color: #333;
+    }
+    form {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    input, select, button {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        background: #2e86de;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #1b4f72;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .summary {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+        font-size: 1.2em;
+    }
+    .alert {
+        color: red;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Personal Finance Dashboard</h1>
+</header>
+
+<div class="container">
+    <h2>Add Transaction</h2>
+    <form id="transactionForm">
+        <input type="text" id="desc" placeholder="Description" required>
+        <input type="number" id="amount" placeholder="Amount" required>
+        <select id="type">
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+        </select>
+        <button type="submit">Add</button>
+    </form>
+
+    <h2>Transactions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Type</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="transactionList"></tbody>
+    </table>
+
+    <div class="summary">
+        <div>Income: Rs <span id="income">0</span></div>
+        <div>Expenses: Rs <span id="expenses">0</span></div>
+        <div>Balance: Rs <span id="balance">0</span></div>
+    </div>
+    <p class="alert" id="alert"></p>
+
+    <canvas id="financeChart" height="100"></canvas>
+</div>
+
+<script>
+/* --- CONFIG: set backend URL --- */
+const API_URL = "http://127.0.0.1:8000";
+
+/* DOM elements */
+const transactionForm = document.getElementById('transactionForm');
+const transactionList = document.getElementById('transactionList');
+const incomeEl = document.getElementById('income');
+const expensesEl = document.getElementById('expenses');
+const balanceEl = document.getElementById('balance');
+const alertEl = document.getElementById('alert');
+
+const ctx = document.getElementById('financeChart').getContext('2d');
+let financeChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ['Income', 'Expenses'],
+        datasets: [{
+            data: [0, 0],
+            backgroundColor: ['#28a745', '#dc3545']
+        }]
+    }
+});
+
+let transactions = []; // will be loaded from backend
+
+/* Fetch all transactions from backend */
+async function fetchTransactions() {
+    try {
+        const res = await fetch(`${API_URL}/transactions`);
+        transactions = await res.json();
+        updateUI();
+    } catch (err) {
+        console.error("Fetch error:", err);
+        alertEl.textContent = "Could not reach backend. Start the FastAPI server.";
+    }
+}
+
+/* Update DOM & chart */
+function updateUI() {
+    transactionList.innerHTML = '';
+    let income = 0, expenses = 0;
+
+    transactions.forEach((t, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${t.desc}</td>
+            <td>Rs${t.amount}</td>
+            <td>${t.type}</td>
+            <td><button data-index="${index}" class="del-btn">❌</button></td>
+        `;
+        transactionList.appendChild(row);
+
+        if (t.type === 'income') income += Number(t.amount);
+        else expenses += Number(t.amount);
+    });
+
+    const balance = income - expenses;
+    incomeEl.textContent = income;
+    expensesEl.textContent = expenses;
+    balanceEl.textContent = balance;
+
+    alertEl.textContent = (expenses > income * 0.7) ? "⚠️ Warning: You’ve spent more than 70% of your income!" : "";
+
+    financeChart.data.datasets[0].data = [income, expenses];
+    financeChart.update();
+
+    // attach delete handlers
+    document.querySelectorAll('.del-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const idx = Number(e.currentTarget.getAttribute('data-index'));
+            await deleteTransaction(idx);
+        });
+    });
+}
+
+/* Add transaction -> POST backend */
+transactionForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const desc = document.getElementById('desc').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const type = document.getElementById('type').value;
+
+    if (!desc || isNaN(amount)) return;
+
+    await fetch(`${API_URL}/transactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ desc, amount, type })
+    });
+
+    transactionForm.reset();
+    await fetchTransactions();
+});
+
+/* Delete transaction -> DELETE backend */
+async function deleteTransaction(index) {
+    await fetch(`${API_URL}/transactions/${index}`, { method: "DELETE" });
+    await fetchTransactions();
+}
+
+/* initial load */
+fetchTransactions();
+</script>
+
+</body>
+</html>
