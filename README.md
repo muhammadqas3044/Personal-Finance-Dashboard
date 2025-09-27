@@ -15,6 +15,27 @@ Built with **FastAPI (backend)** and **HTML/CSS/JS (frontend)**.
 
 ---
 
+## 📖 Setup Instructions (Simple English)
+
+**1. Project Setup**
+- Put the index.html file inside the frontend folder
+- Put the main.py file inside the backend folder
+**2. Run the Backend**
+- Open your terminal
+- Switch to the backend folder: cd .\backend\
+- Create a virtual environment
+- Activate the environment
+**3. Install FastAPI & Uvicorn**
+- pip install fastapi uvicorn
+**4. Start the Server**
+- uvicorn main:app --reload
+  **5. Run the Frontend**
+- Go to the frontend folder
+- Open index.html in your browser (or use VSCode Live Server)
+- You can now add, view, and delete transactions in the dashboard 
+
+---
+
 ## 🛠 Tech Stack
 - **Backend:** FastAPI (Python)
 - **Frontend:** HTML, CSS, Vanilla JS
