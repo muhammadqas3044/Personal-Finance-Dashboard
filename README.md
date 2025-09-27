@@ -20,7 +20,7 @@ Built with **FastAPI (backend)** and **HTML/CSS/JS (frontend)**.
 **1. Project Setup**
 - Put the index.html file inside the frontend folder
 - Put the main.py file inside the backend folder
-**2. Run the Backend**
+- **2. Run the Backend**
 - Open your terminal
 - Switch to the backend folder: cd .\backend\
 - Create a virtual environment
